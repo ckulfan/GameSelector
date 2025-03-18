@@ -20,9 +20,17 @@ struct Game {
   String bestPlayers;  // Best player count can be a single number or range
 };
 
+// Array of files on the device
+extern String* gameFiles;
+extern int gameFileCount;
+
 void addGameToLookup(int gameIndex, String bestPlayers);
-void loadGames();
+void initializeGameData();
+String* getGameFiles();
+void loadGames(String filename);
 void getRecommendedGames(int bestCount, String results[], int resultsCount);
 void dumpGameData();
+String* getFilesInRoot(int &fileCount);
+
 
 #endif // GAMEDATA_H

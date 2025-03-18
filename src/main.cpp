@@ -31,7 +31,7 @@ void setup() {
   randomSeed(analogRead(0));
 
   // Load game data from the CSV file
-  loadGames();
+  initializeGameData();
 }
 
 void loop() {

@@ -12,10 +12,11 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
 float tolerance = 0.005;
 
 // menu variables
-String topMenuItems[] = {"time", "Recommend", "Player #"};
+String topMenuItems[] = {"Recommend", "# Players", "Configure "};
 String menuItems[] = {"2 Players", "3 Players", "4 Players", "5 Players", "6 Players", "7 Players", "8 Players"};
-Menu tMenu = {topMenu, topMenuItems, 2, 0, false};
+Menu tMenu = {topMenu, topMenuItems, 3, 0, false};
 Menu playerCountMenu = {playerMenu, menuItems, 7, 2, false}; // default to 4 players
+Menu configurationMenu;
 bool recommendedDisplayed = false;
 
 // Initialize the display
@@ -35,7 +36,7 @@ void resetDisplay() {
 
 // function to return the menu displayed state
 bool isMenuDisplayed() {
-  return tMenu.menuDisplayed || playerCountMenu.menuDisplayed;
+  return tMenu.menuDisplayed || playerCountMenu.menuDisplayed || configurationMenu.menuDisplayed;
 }
 
 // Increment the selected item in the menu
@@ -197,31 +198,45 @@ void doButtonPress(Button *button) {
     if (reading != button->state) {
       button->state = reading;
      if(button->state == HIGH && button->type == playerCountSelect) {
-        if ( tMenu.menuDisplayed ) {
-          // if the menu is displayed, we need to check which item is selected
-          if (tMenu.selectedItem == 0) {
-            // display the recommended games
-            String gameResults[RECOMMENDED_COUNT];
-            getRecommendedGames(playerCount, gameResults, RECOMMENDED_COUNT);
-            displayRecommendedGames(gameResults, RECOMMENDED_COUNT);
+       if (tMenu.menuDisplayed) {
+         // if the menu is displayed, we need to check which item is selected
+         if (tMenu.selectedItem == 0) {
+           // display the recommended games
+           String gameResults[RECOMMENDED_COUNT];
+           getRecommendedGames(playerCount, gameResults, RECOMMENDED_COUNT);
+           displayRecommendedGames(gameResults, RECOMMENDED_COUNT);
+           tMenu.menuDisplayed = false;
+         } else if (tMenu.selectedItem == 1) {
+           // display the player count menu
+           tMenu.menuDisplayed = false;
+           drawMenu(playerCountMenu);
+         } else if (tMenu.selectedItem == 2) {
+           // display the configuration menu
+           if (gameFileCount > 0) {
+            Serial.println("displaying file list");
             tMenu.menuDisplayed = false;
-          } else if (tMenu.selectedItem == 1) {
-            // display the player count menu
-            tMenu.menuDisplayed = false;
-            drawMenu(playerCountMenu);
-          }
-        } else if (playerCountMenu.menuDisplayed) {
-          // if the player count menu is displayed, we need to set the player count
-          playerCount = (int)playerCountMenu.selectedItem + 2;
-          playerCountMenu.menuDisplayed = false;
+            configurationMenu = {configMenu, gameFiles, gameFileCount, 0, false};
+            drawMenu(configurationMenu);
+           } else {
+            Serial.println("ERROR: no game files on device");
+           }
+         }
+       } else if (playerCountMenu.menuDisplayed) {
+         // if the player count menu is displayed, we need to set the player count
+         playerCount = (int)playerCountMenu.selectedItem + 2;
+         playerCountMenu.menuDisplayed = false;
+         resetDisplay();
+       } else if (recommendedDisplayed) {
+         // if the recommended games are displayed, we need to reset the display
+         resetDisplay();
+         recommendedDisplayed = false;
+       } else if (configurationMenu.menuDisplayed) {
+          String gameFilename = "/" + gameFiles[configurationMenu.selectedItem] + ".csv";
+          loadGames(gameFilename);
           resetDisplay();
-        } else if (recommendedDisplayed) {
-          // if the recommended games are displayed, we need to reset the display
-          resetDisplay();
-          recommendedDisplayed = false;
-        } else {
-          spinWheel();
-        }
+       } else {
+         spinWheel();
+       }
       } else if (button->state == HIGH && button->type == menuSelect) {
         if ( tMenu.menuDisplayed ) {
           // if the menu is displayed, we need to increment the selected item

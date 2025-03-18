@@ -39,8 +39,10 @@ struct Button {
 
 enum MenuType {
   topMenu,
-  playerMenu
+  playerMenu,
+  configMenu
 };
+
 // define a Menu structure
 struct Menu {
   MenuType type;

@@ -2,6 +2,8 @@
 
 Game games[MAX_GAMES];  // Array to store game data (max 20 games)
 int gameCount = 0;
+int gameFileCount = 0;
+String* gameFiles = nullptr;
 
 // Vector to hold indices of games for each "Best" player count (1 to 12 players)
 std::vector<int> bestPlayerLookup[MAX_BEST];  // 13 to account for indices 1 to 12
@@ -41,18 +43,88 @@ void addGameToLookup(int gameIndex, String bestPlayers) {
   }
 }
 
+// Pull the list of files from an array initialized the first time this method is called.
+String* getGameFiles() {
+  if (gameFileCount == 0) {
+    gameFiles = getFilesInRoot(gameFileCount);  // Returns the array and sets gameFileCount
+  }
+  return gameFiles;
+}
 
-// Function to load data from the CSV file
-void loadGames() {
+// Pull the list of files from the root directory that end in ".csv". These are the game files.
+String* getFilesInRoot(int &fileCount) {
+  std::vector<String> fileList;  // Vector to store file names
+
   if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED)) {
     Serial.println("SPIFFS Mount Failed");
-    return;
+    return nullptr;
   }
 
+  // Open the root directory
+  File root = SPIFFS.open("/");
+  if (!root || !root.isDirectory()) {
+    Serial.println("Failed to open root directory");
+  }
+
+  // Open the first file in the directory
+  File file = root.openNextFile();
+
+  // Loop through all the files in the directory
+  while (file && !file.isDirectory()) {
+    String fileName = String(file.name());
+
+    // Check if the filename ends with ".csv" and remove the extension
+    if (fileName.endsWith(".csv")) {
+      fileName = fileName.substring(0, fileName.length() - 4);  // Remove ".csv"
+      fileList.push_back(fileName);  // Add the file name to the vector
+      Serial.print("Adding file: ");
+      Serial.println(fileName);
+    } else {
+      Serial.print("Ignoring non-csv file: ");
+      Serial.println(fileName);
+    }
+    file = root.openNextFile();    // Move to the next file
+  }
+
+  // If no files were found, return nullptr
+  fileCount = fileList.size();
+  if (fileCount == 0) {
+    Serial.println("No CSV files found.");
+    return nullptr;
+  }
+
+  // Convert the vector to a String array
+  String* filesArray = new String[fileCount];  // Allocate memory for the array
+  for (int i = 0; i < fileCount; ++i) {
+    filesArray[i] = fileList[i];
+  }
+
+  Serial.println("Done loading files");
+  return filesArray;  // Return the dynamically allocated array
+}
+
+// Initialize the game data by loading the first file in the list
+void initializeGameData() {
+  String* files = getGameFiles();
+  if (gameFileCount > 0) {
+    Serial.print("loading games from: ");
+    Serial.println(files[0] + ".csv");
+    loadGames("/" + files[0] + ".csv");
+    Serial.println("done loading games");
+  } else {
+    Serial.println("ERROR unable to load games. No files found.");
+  }
+}
+
+// Function to load data from the CSV file
+void loadGames(String filename) {
+  Serial.print("loading games from file: ");
+  Serial.println(filename);
   // Open the file on the filesystem
-  File dataFile = SPIFFS.open("/gamelist.csv");
+  File dataFile = SPIFFS.open(filename);
   if (!dataFile) {
-    Serial.println("Error opening gamelist.csv!");
+    Serial.print("Error opening file: ");
+    Serial.println(filename);
     return;
   }
 

@@ -234,6 +234,7 @@ void doButtonPress(Button *button) {
           String gameFilename = "/" + gameFiles[configurationMenu.selectedItem] + ".csv";
           loadGames(gameFilename);
           resetDisplay();
+          configurationMenu.menuDisplayed = false;
        } else {
          spinWheel();
        }
@@ -246,6 +247,10 @@ void doButtonPress(Button *button) {
           // if the player count menu is displayed, we need to increment the selected item
           incrementSelectedItem(playerCountMenu);
           drawMenu(playerCountMenu);
+        } else if (configurationMenu.menuDisplayed) {
+          // if the configuration menu is displayed, we need to increment the selected item
+          incrementSelectedItem(configurationMenu);
+          drawMenu(configurationMenu);
         } else {
           // if the menu is not displayed, we need to display the top menu
           drawMenu(tMenu);

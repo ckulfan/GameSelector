@@ -118,8 +118,15 @@ void initializeGameData() {
 
 // Function to load data from the CSV file
 void loadGames(String filename) {
+  Serial.println("Removing games from cache");
+  for (int i = 0; i < MAX_BEST; i++) {
+    bestPlayerLookup[i].clear();
+  }
+  gameCount = 0;
+
   Serial.print("loading games from file: ");
   Serial.println(filename);
+
   // Open the file on the filesystem
   File dataFile = SPIFFS.open(filename);
   if (!dataFile) {
@@ -159,7 +166,8 @@ void loadGames(String filename) {
 
   dataFile.close();
   Serial.println("Data loaded successfully.");
-  Serial.println("Total games: " + gameCount);
+  Serial.print("Total games: ");
+  Serial.println(gameCount);
 }
 
 // Function to search for games by "Best" player count
